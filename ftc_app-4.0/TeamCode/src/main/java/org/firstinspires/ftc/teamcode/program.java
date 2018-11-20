@@ -64,7 +64,7 @@ public class program extends LinearOpMode {
     private DcMotor rightDrive = null;
 //    private Servo clawLeft = null;
 //    private Servo clawRight = null;
-//    private DcMotor verticalDrive = null;
+    private DcMotor verticalDrive = null;
 //    private DigitalChannel topButton = null;
 //    private DigitalChannel bottomButton = null;
 //    private Servo jewelArm;
@@ -79,7 +79,7 @@ public class program extends LinearOpMode {
         // step (using the FTC Robot Controller app on the phone).
         leftDrive  = hardwareMap.get(DcMotor.class, "motorLeft");
         rightDrive = hardwareMap.get(DcMotor.class, "motorRight");
-//        verticalDrive = hardwareMap.get(DcMotor.class, "motorVertical");
+        verticalDrive = hardwareMap.get(DcMotor.class, "motorArm");
 //        clawLeft = hardwareMap.get(Servo.class, "clawLeft");
 //        clawRight = hardwareMap.get(Servo.class, "clawRight");
 //        topButton = hardwareMap.get(DigitalChannel.class, "topButton");
@@ -93,7 +93,7 @@ public class program extends LinearOpMode {
         // Reverse the motor that runs backwards when connected directly to the battery
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
-//        verticalDrive.setDirection(DcMotor.Direction.FORWARD);
+        verticalDrive.setDirection(DcMotor.Direction.FORWARD);
 
         // SWITCH TEST
       /*  while (!opModeIsActive())
@@ -122,7 +122,7 @@ public class program extends LinearOpMode {
 
             // Gamepad2
             // slow down up
-//            double vdrive = gamepad2.left_stick_y * 0.8;
+            double vdrive = gamepad2.left_stick_y;
 
             // reachedtop is true if top button is pressed
 //            boolean reachedTop = false;
@@ -139,6 +139,7 @@ public class program extends LinearOpMode {
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
+            verticalDrive.setPower(vdrive);
 
 //            if (vdrive > 0 && !reachedBottom)
 //                // send power to vertical drive
