@@ -62,9 +62,10 @@ public class program extends LinearOpMode {
 //    private ElapsedTime runtime = new ElapsedTime();
     private DcMotor leftDrive = null;
     private DcMotor rightDrive = null;
+    private DcMotor spinDrive = null;
 //    private Servo clawLeft = null;
 //    private Servo clawRight = null;
-    private DcMotor verticalDrive = null;
+    private DcMotor armDrive = null;
 //    private DigitalChannel topButton = null;
 //    private DigitalChannel bottomButton = null;
 //    private Servo jewelArm;
@@ -79,7 +80,8 @@ public class program extends LinearOpMode {
         // step (using the FTC Robot Controller app on the phone).
         leftDrive  = hardwareMap.get(DcMotor.class, "motorLeft");
         rightDrive = hardwareMap.get(DcMotor.class, "motorRight");
-        verticalDrive = hardwareMap.get(DcMotor.class, "motorArm");
+        armDrive = hardwareMap.get(DcMotor.class, "motorArm");
+        spinDrive = hardwareMap.get(DcMotor.class, "spinningArm");
 //        clawLeft = hardwareMap.get(Servo.class, "clawLeft");
 //        clawRight = hardwareMap.get(Servo.class, "clawRight");
 //        topButton = hardwareMap.get(DigitalChannel.class, "topButton");
@@ -93,7 +95,8 @@ public class program extends LinearOpMode {
         // Reverse the motor that runs backwards when connected directly to the battery
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
-        verticalDrive.setDirection(DcMotor.Direction.FORWARD);
+        armDrive.setDirection(DcMotor.Direction.FORWARD);
+        spinDrive.setDirection(DcMotor.Direction.REVERSE);
 
         // SWITCH TEST
       /*  while (!opModeIsActive())
@@ -122,7 +125,7 @@ public class program extends LinearOpMode {
 
             // Gamepad2
             // slow down up
-            double vdrive = gamepad2.left_stick_y;
+            double adrive = gamepad2.left_stick_y;
 
             // reachedtop is true if top button is pressed
 //            boolean reachedTop = false;
@@ -139,7 +142,11 @@ public class program extends LinearOpMode {
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
-            verticalDrive.setPower(vdrive);
+            armDrive.setPower(adrive);
+
+            if (gamepad2.a) {
+                spinDrive.setPower(1);
+            }
 
 //            if (vdrive > 0 && !reachedBottom)
 //                // send power to vertical drive
