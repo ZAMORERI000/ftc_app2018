@@ -40,160 +40,72 @@ import com.qualcomm.robotcore.hardware.ServoImpl;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-
-/**
- * This file contains an minimal example of a Linear "OpMode". An OpMode is a 'program' that runs in either
- * the autonomous or the teleop period of an FTC match. The names of OpModes appear on the menu
- * of the FTC Driver Station. When an selection is made from the menu, the corresponding OpMode
- * class is instantiated on the Robot Controller and executed.
- *
- * This particular OpMode just executes a basic Tank Drive Teleop for a two wheeled robot
- * It includes all the skeletal structure that all linear OpModes contain.
- *
- * Use Android Studios to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this opmode to the Driver Station OpMode list
- */
-
 @TeleOp(name="TeleOp Mode", group="2018")
 public class program extends LinearOpMode {
 
-//    private static final boolean NO_SWITCHES = true;
-    // Declare OpMode members.
-//    private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftDrive = null;
-    private DcMotor rightDrive = null;
-    private DcMotor spinDrive = null;
-//    private Servo clawLeft = null;
-//    private Servo clawRight = null;
-    private DcMotor armDrive = null;
-//    private DigitalChannel topButton = null;
-//    private DigitalChannel bottomButton = null;
-//    private Servo jewelArm;
+    // def motors
+    private DcMotor leftDrive, rightDrive, spinDrive, armDrive = null;
+    private Servo kickServo = null;
+
+    // keeps track of kickArm servo state
+    private boolean kickerOut = false;
+    private long lastServoMove = 0;
 
     @Override
     public void runOpMode() {
-        telemetry.addData("Status", "Initialized");
+        // print debug
+        telemetry.addData("Debug", "Initialized");
         telemetry.update();
 
-        // Initialize the hardware variables. Note that the strings used here as parameters
-        // to 'get' must correspond to the names assigned during the robot configuration
-        // step (using the FTC Robot Controller app on the phone).
-        leftDrive  = hardwareMap.get(DcMotor.class, "motorLeft");
-        rightDrive = hardwareMap.get(DcMotor.class, "motorRight");
-        armDrive = hardwareMap.get(DcMotor.class, "motorArm");
-        spinDrive = hardwareMap.get(DcMotor.class, "spinningArm");
-//        clawLeft = hardwareMap.get(Servo.class, "clawLeft");
-//        clawRight = hardwareMap.get(Servo.class, "clawRight");
-//        topButton = hardwareMap.get(DigitalChannel.class, "topButton");
-//        bottomButton = hardwareMap.get(DigitalChannel.class, "bottomButton");
-//        jewelArm = hardwareMap.get(Servo.class, "jewelArm");
+        leftDrive  = hardwareMap.get(DcMotor.class, "motorLeft");       // left motor for driving
+        rightDrive = hardwareMap.get(DcMotor.class, "motorRight");      // right motor for driving
+        armDrive = hardwareMap.get(DcMotor.class, "motorArm");          // vertical motor for throwing balls
+        spinDrive = hardwareMap.get(DcMotor.class, "motorSpin");        // motor for collecting balls
+        kickServo = hardwareMap.get(Servo.class, "servoKick");          // servo for kicking trophy
 
-//        topButton.setMode(DigitalChannel.Mode.INPUT);
-//        bottomButton.setMode(DigitalChannel.Mode.INPUT);
-
-        // Most robots need the motor on one side to be reversed to drive forward
-        // Reverse the motor that runs backwards when connected directly to the battery
+        // set motor dirs
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.REVERSE);
         armDrive.setDirection(DcMotor.Direction.FORWARD);
         spinDrive.setDirection(DcMotor.Direction.REVERSE);
 
-        // SWITCH TEST
-      /*  while (!opModeIsActive())
-        {
-            telemetry.addData("TOP Button: ", "" + topButton.getState());
-            telemetry.addData("BOTTOM Button: ", "" + bottomButton.getState());
-            telemetry.update();
-        }*/
+        // move servo back initiailly
+        kickServo.setPosition(0.0);
 
-        // Wait for the game to start (driver presses PLAY)
+        // wait for start
         waitForStart();
-//        runtime.reset();
 
         // run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
 
-            /*   HANDLE PLAYER DRIVE */
-
-            // Gamepad1
+            // handle driving mechanics
             double drive = -gamepad1.left_stick_y;
             double turn  =  gamepad1.right_stick_x;
             double leftPower = Range.clip(drive + turn * 2, -1.0, 1.0);
             double rightPower = Range.clip(drive - turn * 2, -1.0, 1.0);
 
-            telemetry.addData("Turning", "Left: " + leftPower + " | Right: " + rightPower);
-
-            // Gamepad2
-            // slow down up
-            double adrive = gamepad2.left_stick_y;
-
-            // reachedtop is true if top button is pressed
-//            boolean reachedTop = false;
-//            boolean reachedBottom = false;
-//            if (!NO_SWITCHES)
-//            {
-//                reachedTop = topButton.getState();
-//                reachedBottom = !bottomButton.getState();
-//            }
-//
-//
-//            telemetry.addData("Sensors", "Reached top: " + reachedTop +  " | Reached buttom: " + reachedBottom);
-
             // Send calculated power to wheels
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
-            armDrive.setPower(adrive);
 
-            if (gamepad2.a) {
-                spinDrive.setPower(1);
+            telemetry.addData("Debug", "Left: " + leftPower + " | Right: " + rightPower);
+
+            // set vertical arm power
+            armDrive.setPower(gamepad2.right_stick_y * 0.2);
+
+            // make spinDrive spin with speed proportional to trigger displacement
+            if (gamepad2.right_trigger > 0.1)
+                spinDrive.setPower(gamepad2.right_trigger);
+            else if (gamepad2.left_trigger > 0.1)
+                spinDrive.setPower(-gamepad2.left_trigger);
+
+            // toggle servo for trophy kick
+            if (gamepad2.left_bumper && System.currentTimeMillis() - lastServoMove > 500) {
+                kickServo.setPosition(kickerOut? 0.0 : 1.0);
+                kickerOut = !kickerOut;
+                lastServoMove = System.currentTimeMillis();
             }
-
-//            if (vdrive > 0 && !reachedBottom)
-//                // send power to vertical drive
-//                verticalDrive.setPower(vdrive);
-//            else if (vdrive < 0 && !reachedTop)
-//                verticalDrive.setPower(vdrive);
-//            else
-//                verticalDrive.setPower(0.0);
-
-            /* HANDLE CLAWS */
-
-            // range from 0.15 - 1.0
-//            double openness = gamepad2.right_trigger + 0.15;
-//
-//            double leftclaw = openness * 0.6;
-//            clawLeft.setPosition(leftclaw);
-//
-//            double rightclaw = 1 - (openness * 0.6);
-//            clawRight.setPosition(rightclaw);
-            /*// left trigger will open the claw, right trigger closes it
-            boolean ltrigger = gamepad2.left_trigger > 0;   // if true, open claw
-            boolean rtrigger = gamepad2.right_trigger > 0;  // if false, close claw
-            if (ltrigger && !rtrigger && clawClosed)
-            {
-                // open claw
-                // case 1
-                clawLeft.setPosition(0.0);
-                clawRight.setPosition(1.0);
-                // case 2
-                // clawLeft.setPosition(1.0);
-                //clawRight.setPosition(0.0);
-                telemetry.addData("Claws", "Opened Claws");
-                clawClosed = false;
-            }
-            else if (rtrigger && !ltrigger && !clawClosed)
-            {
-                // close claw
-                clawLeft.setPosition(0.6);
-                clawRight.setPosition(0.4);
-                telemetry.addData("Claws", "Closed Claws");
-                clawClosed = true;
-            }
-            else
-            {
-                telemetry.addData("Claws", "Do not open/close claws at same time!");
-            }*/
-
+            telemetry.addData("Debug", "Kicker Arm Toggled to " + kickerOut);
             telemetry.update();
         }
     }
