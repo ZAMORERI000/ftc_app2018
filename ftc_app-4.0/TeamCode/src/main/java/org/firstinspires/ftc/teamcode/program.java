@@ -94,10 +94,8 @@ public class program extends LinearOpMode {
             armDrive.setPower(gamepad2.right_stick_y * 0.2);
 
             // make spinDrive spin with speed proportional to trigger displacement
-            if (gamepad2.right_trigger > 0.1)
-                spinDrive.setPower(gamepad2.right_trigger);
-            else if (gamepad2.left_trigger > 0.1)
-                spinDrive.setPower(-gamepad2.left_trigger);
+            spinDrive.setPower(gamepad2.right_trigger);
+            spinDrive.setPower(-gamepad2.left_trigger);
 
             // toggle servo for trophy kick
             if (gamepad2.left_bumper && System.currentTimeMillis() - lastServoMove > 500) {
